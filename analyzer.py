@@ -44,37 +44,149 @@ def deleteBlankLines(t):	#Deletes blank lines in the begin of each mask
 	return t
 
 
-def issolateHeader(t,captured):	#Issolates simiral masks
+def issolateHeader(t,captured_MB,captured_SN):	#Issolates simiral masks
 	if debug: print '\n~~~~~~~ issolateHeader func started ~~~~~~~~~\n'
 	for mask in t:
 		try:
 			#print mask[12][10:12]
 			if (mask[12][10:12] == 'MB') or (mask[10][10:12] == 'MB'):	# MB related masks
-				captured.append(mask)
-				# for line in mask:
-				# 	if line[10:12] == 'MB':
-				# 		captured.append(mask)
+				captured_MB.append(mask)
+				
+			if (mask[12][10:12] == 'SN') or (mask[10][10:12] == 'SN'):  # SN related masks
+				captured_SN.append(mask)
 
 		except IndexError:
 			# print "exception captured"
 			pass
 
 
-def mbMaskAnalyze(captured, book):
-	#print captured[1][1]
+def snMaskAnalyze(captured_SN, book):
+	if debug: print '\n~~~~~~~ snMaskAnalyze func started ~~~~~~~~~\n'
+	print
+	print "------------------------------------"
+	print "------- analyzing SN mask ----------"
+	print "------------------------------------"
+	print 
+	sheet = book.add_sheet('SN mask',cell_overwrite_ok=True) #Create an xls sheet where we will store results
+
+	snHeaders = ['Header', 'Date', 'Time', 'Message Group', 'Specific Mask', 'Type of Mask', 'MMN', 'Alarm Priority', 'Probable Cause', 'Specific Problem',
+	 'Message Number', 'Mask Class', 'SN id', 'Unit', 'From', 'To', 'Supplementary Info 1', 'Supplementary Info 2', 'Supplementary Info 3',
+	  'Supplementary Info 4']
+
+	rows_included = 0
+
+	for item in range(0,len(snHeaders)): #fill first raw of output excel with titles of Data
+		sheet.write(0,item,snHeaders[item],style1)
+
+	for mask in captured_SN:
+		header = mask[2][0:31]
+		date = mask[2][54:62]
+		time = mask[2][64:72]
+		messageGroup = mask[3][35:39]
+		specificMask = mask[3][40:45]
+
+		if mask[12][10:12] == 'SN':
+			if mask[13][4:8] =='CONF':
+				# EQUIPMENT ALARM SPECIFIC			
+				typeOfMask = mask[6][4:40]
+				mmn = mask[6][62:67]
+				alarmPriority = mask[7][22:35]
+				probableCause = mask[8][22:45]
+				specificProblem = mask[9][22:]
+				messageNumber = mask[10][22:32]
+				classOfMask = mask[12][10:12]
+				SN_id = mask[12][21:23]
+				transition_unit = mask[15][20:31]
+				transition_from = mask[15][33:36]
+				transition_to = mask[15][39:42]
+				supplementaryInfo1 = mask[17][6:41]
+				supplementaryInfo2 = mask[18][6:41]
+				supplementaryInfo3 = mask[19][6:41]
+				supplementaryInfo4 = mask[20][6:41]
+			else:
+				# OTHER TYPE OF EQUIPMENT ALARM
+				typeOfMask = mask[6][4:40]
+				mmn = mask[6][62:67]
+				alarmPriority = mask[7][22:35]
+				probableCause = mask[8][22:45]
+				specificProblem = mask[9][22:]
+				messageNumber = mask[10][22:32]
+				classOfMask = mask[12][10:12]
+				SN_id = mask[12][21:23]
+				transition_unit = mask[12][10:15] + "-" + mask[12][21] + " -" + mask[12][36]
+				transition_from = ""
+				transition_to = ""
+				supplementaryInfo1 = ""
+				supplementaryInfo2 = ""
+				supplementaryInfo3 = ""
+				supplementaryInfo4 = ""
+
+		#END OF EQUIPMENT ALARM SPECIFIC
+		# elif mask[6][4:26] == 'END OF EQUIPMENT ALARM':
+		elif mask[10][10:12] == 'SN':
+			typeOfMask = mask[5][4:40]
+			probableCause = mask[6][22:45]
+			specificProblem = mask[7][22:]
+			messageNumber = mask[8][22:32]
+			classOfMask = mask[10][10:12]
+			SN_id = mask[10][21:23]
+			transition_unit = mask[10][10:15] + "-" + mask[10][21] + " -" + mask[10][36]
+			transition_from = ""
+			transition_to = ""
+			supplementaryInfo1 = ""
+			supplementaryInfo2 = ""
+			supplementaryInfo3 = ""
+			supplementaryInfo4 = ""
+
+		if debug:
+			print 'header = ' + header
+			print 'date = ' + date
+			print 'time = ' + time
+			print 'messageGroup = ' + messageGroup
+			print 'specificMask = ' + specificMask
+			print 'type of mask = ' + typeOfMask
+			print 'mmn = ' + mmn
+			print 'alarm priority = ' + alarmPriority
+			print 'probable cause = ' + probableCause
+			print 'specific problem = ' + specificProblem
+			print 'message number = ' + messageNumber
+			print 'class = ' + classOfMask
+			print 'SN = ' + SN_id
+			print 'unit = ' + transition_unit
+			print 'from = ' + transition_from
+			print 'to = ' + transition_to
+			print 'supplementary info = ' + supplementaryInfo1
+			print 'supplementary info = ' + supplementaryInfo2
+			print 'supplementary info = ' + supplementaryInfo3
+			print 'supplementary info = ' + supplementaryInfo4
+			print '-----------------------------------------------'
+
+		
+		snInfo = [header, date, time, messageGroup, specificMask, typeOfMask, mmn, alarmPriority, probableCause, specificProblem, messageNumber, 
+			classOfMask, SN_id, transition_unit, transition_from, transition_to, supplementaryInfo1, supplementaryInfo2, 
+			supplementaryInfo3, supplementaryInfo4]
+
+		for column in range(0, len(snInfo)):
+			sheet.write(rows_included+1,column,snInfo[column],style2)
+
+
+		mmnLink = MMN_CuDo_Link.mmnLinkUpdate(mmn)
+		if mmnLink != '"NOTFOUND"':
+			mmnStr = '"%s"'%mmn
+			sheet.write(rows_included+1,6,xlwt.Formula('HYPERLINK(%s;%s)'%(mmnLink,mmnStr)),style3)
+
+		rows_included+=1
+	print str(rows_included) + ' SN entries exported'
+
+
+def mbMaskAnalyze(captured_MB, book):
+	#print captured_MB[1][1]
 	if debug: print '\n~~~~~~~ mbMaskAnalyze func started ~~~~~~~~~\n'
 	print
 	print "------------------------------------"
 	print "------- analyzing MB mask ----------"
 	print "------------------------------------"
 	print 
-	# for mask in range(captured):
-	# 	for line in range(mask):
-	# 		print captured[mask][line]
-
-	# for mask in range(0,len(captured)):
-	# 	for line in mask:
-	# 		print captured[mask][line]
 
 	sheet = book.add_sheet('MB mask',cell_overwrite_ok=True) #Create an xls sheet where we will store results
 
@@ -87,7 +199,7 @@ def mbMaskAnalyze(captured, book):
 	for item in range(0,len(mbHeaders)): #fill first raw of output excel with titles of Data
 		sheet.write(0,item,mbHeaders[item],style1)
 
-	for mask in captured:
+	for mask in captured_MB:
 		header = mask[2][0:31]
 		date = mask[2][54:62]
 		time = mask[2][64:72]
@@ -191,31 +303,16 @@ def mbMaskAnalyze(captured, book):
 			sheet.write(rows_included+1,6,xlwt.Formula('HYPERLINK(%s;%s)'%(mmnLink,mmnStr)),style3)
 
 		rows_included+=1
-	print str(rows_included) + ' entries exported'
-
-
-def linePrinter(t):		#Prints all masks with new entry indicator between them
-	for row in t:
-		for column in row:
-			print column
-		print '-----------------NEW ENTRY----------------------------'
-
-
-def fileWriter(t):		#Writes all masks to a file
-	a = open("log.txt", "a")
-	for row in t:
-		for column in row:
-			a.write(column)
-		a.write('\n-------------------NEW ENTRY-------------------------\n')
-	a.close()
+	print str(rows_included) + ' MB entries exported'
 
 
 def main():
 	book = Workbook()
+	os.system('cls')
 	while True:
 		print " /-----------------------------\\"
 		print "|~~~~~ HF.ARCHIVE ANALYZER ~~~~~|"
-		print "|~~~~~     version 0.3     ~~~~~|"
+		print "|~~~~~     version 0.4     ~~~~~|"
 		print " \-----------------------------/"
 		print
 		print "Please choose file name bellow: (only UTF-8 encoding is supported)"
@@ -271,18 +368,17 @@ def main():
 	# f = open("%s" %filename, "r")
 	t = []
 	temp = []
-	captured = []
+	captured_MB = []
+	captured_SN = []
 
 	#mark as comment any line bellow you don't want to execute
 	lineSplitter(f, t, temp)
-	issolateHeader(t,captured)
-	#mbPrinter(captured)
-	# linePrinter(t)
-	mbMaskAnalyze(captured, book)
-	#fileWriter(t)
+	issolateHeader(t,captured_MB,captured_SN)
+	mbMaskAnalyze(captured_MB, book)
+	snMaskAnalyze(captured_SN, book)
 
 	#check(t)
-	
+	print
 	try:
 		book.save('ANALYZED.xls') #Export output in a new xls file
 	except IOError:
