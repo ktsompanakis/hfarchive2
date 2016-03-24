@@ -20,15 +20,27 @@ style3 = xlwt.easyxf('font: color blue;')
 def lineSplitter(f, t, temp):	#Splits masks inside an array
 	if debug: print '\n~~~~~~~ lineSplitter func started ~~~~~~~~~\n'
 	for line in f:
-		if line.startswith('\r') or line.startswith('\xef') or line.startswith('\n'):
-			continue
-
+		# if line.startswith('\r') or line.startswith('\xef') or line.startswith('\n'):
+		# 	continue
 		temp.append(line)
 		if line.startswith('END'):
 			t.append(temp)
 			temp = []
-
 	f.close()
+
+	t = deleteBlankLines(t)
+	return t
+
+
+def deleteBlankLines(t):	#Deletes blank lines in the begin of each mask
+	for mask in t:
+		i = 0
+		for line in mask:
+			if line == "HEADER:":
+				break
+			if not line.strip():
+				del mask[i]
+			i+=1
 	return t
 
 
@@ -76,16 +88,16 @@ def mbMaskAnalyze(captured, book):
 		sheet.write(0,item,mbHeaders[item],style1)
 
 	for mask in captured:
-		header = mask[1][0:31]
-		date = mask[1][54:62]
-		time = mask[1][64:72]
-		messageGroup = mask[2][35:39]
-		specificMask = mask[2][40:45]
+		header = mask[2][0:31]
+		date = mask[2][54:62]
+		time = mask[2][64:72]
+		messageGroup = mask[3][35:39]
+		specificMask = mask[3][40:45]
 
 		if mask[12][10:12] == 'MB':
 			# EQUIPMENT ALARM SPECIFIC			
-			typeOfMask = mask[5][4:40]
-			mmn = mask[5][62:67]
+			typeOfMask = mask[6][4:40]
+			mmn = mask[6][62:67]
 			alarmPriority = mask[7][22:35]
 			probableCause = mask[8][22:45]
 			specificProblem = mask[9][22:]
@@ -95,14 +107,14 @@ def mbMaskAnalyze(captured, book):
 			transition_unit = mask[15][20:31]
 			transition_from = mask[15][33:36]
 			transition_to = mask[15][39:42]
-			supplementaryInfo1 = mask[18][6:41]
-			supplementaryInfo2 = mask[19][6:41]
-			supplementaryInfo3 = mask[20][6:41]
-			supplementaryInfo4 = mask[21][6:41]
+			supplementaryInfo1 = mask[17][6:41]
+			supplementaryInfo2 = mask[18][6:41]
+			supplementaryInfo3 = mask[19][6:41]
+			supplementaryInfo4 = mask[20][6:41]
 
 		#END OF EQUIPMENT ALARM SPECIFIC
 		elif mask[10][10:12] == 'MB':
-			typeOfMask = mask[4][4:40]
+			typeOfMask = mask[5][4:40]
 			probableCause = mask[6][22:45]
 			specificProblem = mask[7][22:]
 			messageNumber = mask[8][22:32]
@@ -118,6 +130,7 @@ def mbMaskAnalyze(captured, book):
 			supplementaryInfo2 = ""
 			supplementaryInfo3 = ""
 			supplementaryInfo4 = ""
+
 
 		if debug:
 			print 'header = ' + header
@@ -181,7 +194,7 @@ def main():
 	while True:
 		print " /-----------------------------\\"
 		print "|~~~~~ HF.ARCHIVE ANALYZER ~~~~~|"
-		print "|~~~~~     version 0.1     ~~~~~|"
+		print "|~~~~~     version 0.2     ~~~~~|"
 		print " \-----------------------------/"
 		print
 		print "Please choose file name bellow:"
@@ -205,18 +218,24 @@ def main():
 			break
 		else:
 			print 'Sorry you have enter an invalid choice... Please try again: '
+	
 	# Read from Config file
-	#try:
-	  #config = ConfigParser.ConfigParser()
-	  #config.read('config.ini')
-	#except ConfigParser.ParsingError, err:
-	  #print 'Could not parse:', err
-	  #sys.exit()
+	try:
+		config = ConfigParser.ConfigParser()
+		config.read('config.ini')
+		global debug
+		debug = config.getboolean('Parameters', 'debug')	#Debug mode
+	except ConfigParser.ParsingError, err:
+		# print 'Could not parse:', err
+		# sys.exit()
+		pass
+	except ConfigParser.NoSectionError, err:
+		# print 'Could not parse:', err
+		# sys.exit()
+		pass
 
-	#config = ConfigParser.ConfigParser()
-	#config.read('config.ini')
-
-	#path = config.get('Parameters','path')
+	
+	
 	try:
 		f = open("%s" %filename, "r")
 		pass
@@ -255,7 +274,7 @@ def main():
 		print 'Output is saved to ANALYZED.xls'
 
 	if debug: print '\n~~~~~~~~~~ program end ~~~~~~~~~~~\n'
-	time.sleep(10)
+	u = raw_input('Press Enter to exit... ')
 
 if __name__ == '__main__':
 	main()
