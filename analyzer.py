@@ -95,22 +95,43 @@ def mbMaskAnalyze(captured, book):
 		specificMask = mask[3][40:45]
 
 		if mask[12][10:12] == 'MB':
-			# EQUIPMENT ALARM SPECIFIC			
-			typeOfMask = mask[6][4:40]
-			mmn = mask[6][62:67]
-			alarmPriority = mask[7][22:35]
-			probableCause = mask[8][22:45]
-			specificProblem = mask[9][22:]
-			messageNumber = mask[10][22:32]
-			classOfMask = mask[12][10:12]
-			MB_id = mask[12][21:23]
-			transition_unit = mask[15][20:31]
-			transition_from = mask[15][33:36]
-			transition_to = mask[15][39:42]
-			supplementaryInfo1 = mask[17][6:41]
-			supplementaryInfo2 = mask[18][6:41]
-			supplementaryInfo3 = mask[19][6:41]
-			supplementaryInfo4 = mask[20][6:41]
+			if mask[13][4:8] =='CONF':
+				# EQUIPMENT ALARM SPECIFIC			
+				typeOfMask = mask[6][4:40]
+				mmn = mask[6][62:67]
+				alarmPriority = mask[7][22:35]
+				probableCause = mask[8][22:45]
+				specificProblem = mask[9][22:]
+				messageNumber = mask[10][22:32]
+				classOfMask = mask[12][10:12]
+				MB_id = mask[12][21:23]
+				transition_unit = mask[15][20:31]
+				transition_from = mask[15][33:36]
+				transition_to = mask[15][39:42]
+				supplementaryInfo1 = mask[17][6:41]
+				supplementaryInfo2 = mask[18][6:41]
+				supplementaryInfo3 = mask[19][6:41]
+				supplementaryInfo4 = mask[20][6:41]
+			else:
+				# OTHER TYPE OF EQUIPMENT ALARM
+				typeOfMask = mask[6][4:40]
+				mmn = mask[6][62:67]
+				alarmPriority = mask[7][22:35]
+				probableCause = mask[8][22:45]
+				specificProblem = mask[9][22:]
+				messageNumber = mask[10][22:32]
+				classOfMask = mask[12][10:12]
+				MB_id = mask[12][21:23]
+				if mask[12][10:14] == "MB  ":	# MBIC only
+					transition_unit = "MBIC" + " -" + mask[12][21]
+				else:
+					transition_unit = mask[12][10:14] + " -" + mask[12][21] + " -" + mask[12][36]
+				transition_from = ""
+				transition_to = ""
+				supplementaryInfo1 = ""
+				supplementaryInfo2 = ""
+				supplementaryInfo3 = ""
+				supplementaryInfo4 = ""
 
 		#END OF EQUIPMENT ALARM SPECIFIC
 		elif mask[10][10:12] == 'MB':
@@ -194,10 +215,11 @@ def main():
 	while True:
 		print " /-----------------------------\\"
 		print "|~~~~~ HF.ARCHIVE ANALYZER ~~~~~|"
-		print "|~~~~~     version 0.2     ~~~~~|"
+		print "|~~~~~     version 0.3     ~~~~~|"
 		print " \-----------------------------/"
 		print
-		print "Please choose file name bellow:"
+		print "Please choose file name bellow: (only UTF-8 encoding is supported)"
+		print
 		print "1. HF.ARCHIVE.txt, (" + os.getcwd() + ")"
 		print "2. Choose filename manualy"
 		print "3. Quit"
